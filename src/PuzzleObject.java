@@ -45,6 +45,7 @@ public class PuzzleObject {
         this.players.put(username, client);
         this.scores.put(username, 0);
         this.playerStatus.put(username, "active");
+        this.playerHeartbeats.put(username, System.nanoTime());
     }
 
     /**
@@ -418,14 +419,8 @@ public class PuzzleObject {
     }
 
 
-    public Boolean updateHeartbeat(String username, Long heartbeat){
-
-        if(this.playerHeartbeats.containsKey(username)){
-            this.playerHeartbeats.put(username, heartbeat);
-            return true;
-        }
-
-        return false;
+    public void updateHeartbeat(String username){
+        this.playerHeartbeats.put(username, System.nanoTime());
     }
 
     public Long getPlayerHeartbeat(String username){

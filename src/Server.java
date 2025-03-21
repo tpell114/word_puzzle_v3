@@ -415,7 +415,7 @@ public class Server extends UnicastRemoteObject implements CrissCrossPuzzleInter
         System.out.println("Heartbeat from " + username + " in game " + gameID);
 
         if (gamesMap.containsKey(gameID)) {
-            gamesMap.get(gameID).updateHeartbeat(username, System.nanoTime());
+            gamesMap.get(gameID).updateHeartbeat(username);
         }
 
     }
@@ -446,7 +446,11 @@ public class Server extends UnicastRemoteObject implements CrissCrossPuzzleInter
                             Integer gameID = getKeyByValue(gamesMap, game);
 
                             if(gameID != null){
-                                gamesMap.get(gameID).updatePlayerStatus(player, "failed");
+                                
+                                if(game.getPlayerStatus(player).equals("failed")){
+                                    gamesMap.get(gameID).updatePlayerStatus(player, "failed");
+                                }
+                                
                                 playerTimeout(gameID, player, false, true);
                             } else {
                                 System.out.println("Failed to find game ID for suspected timed-out player: " + player);
@@ -458,7 +462,11 @@ public class Server extends UnicastRemoteObject implements CrissCrossPuzzleInter
                             Integer gameID = getKeyByValue(gamesMap, game);
 
                             if(gameID != null){
-                                gamesMap.get(gameID).updatePlayerStatus(player, "suspected");
+
+                                if(!game.getPlayerStatus(player).equals("suspected")){
+                                    gamesMap.get(gameID).updatePlayerStatus(player, "suspected");
+                                }
+                                
                                 playerTimeout(gameID, player, true, false);
                             } else {
                                 System.out.println("Failed to find game ID for failed timed-out player: " + player);
