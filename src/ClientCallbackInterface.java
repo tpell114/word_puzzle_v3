@@ -11,5 +11,6 @@ public interface ClientCallbackInterface extends Remote {
     public void onPlayerJoin(String player, Integer numPlayers) throws RemoteException;
     public void onPlayerQuit(String player, Integer numPlayers) throws RemoteException;
     public void onGameStart() throws RemoteException;
+    public void onPlayerTimeout(String player, Boolean suspected, Boolean failed) throws RemoteException;
 
 }

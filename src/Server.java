@@ -2,6 +2,7 @@ import java.rmi.*;
 import java.rmi.server.*;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -19,6 +20,7 @@ public class Server extends UnicastRemoteObject implements CrissCrossPuzzleInter
         } catch (Exception e) {
             e.printStackTrace();
         }
+        new Thread(() -> heartbeatListener()).start();
     }
 
     public static void main(String[] args) {
@@ -407,4 +409,131 @@ public class Server extends UnicastRemoteObject implements CrissCrossPuzzleInter
         return wordRepo.checkWord(word);
     }
 
+    @Override
+    public void playerHeartbeat(Integer gameID, String username) throws RemoteException {
+
+        System.out.println("Heartbeat from " + username + " in game " + gameID);
+
+        if (gamesMap.containsKey(gameID)) {
+            gamesMap.get(gameID).updateHeartbeat(username, System.nanoTime());
+        }
+
+    }
+
+    private void heartbeatListener() {
+
+        long TOLERANCE = 1000; // in nanoseconds
+        int FAILURE_THRESHOLD = 3;
+
+        System.out.println("Starting heartbeat listener...");
+
+        while (true) {
+            try {
+                Thread.sleep(TOLERANCE);
+    
+                long now = System.nanoTime();
+    
+                for (PuzzleObject game : gamesMap.values()) {
+    
+                    for (String player : game.getAllPlayers().keySet()) {
+
+                        long elapsed = now - game.getPlayerHeartbeat(player);
+
+                        if (elapsed < TOLERANCE) {
+                            break;
+                        } else if (elapsed > TOLERANCE * FAILURE_THRESHOLD) {
+                            //failed
+                            Integer gameID = getKeyByValue(gamesMap, game);
+
+                            if(gameID != null){
+                                gamesMap.get(gameID).updatePlayerStatus(player, "failed");
+                                playerTimeout(gameID, player, false, true);
+                            } else {
+                                System.out.println("Failed to find game ID for suspected timed-out player: " + player);
+                            }
+
+                            break;
+                        } else {
+                            //suspected
+                            Integer gameID = getKeyByValue(gamesMap, game);
+
+                            if(gameID != null){
+                                gamesMap.get(gameID).updatePlayerStatus(player, "suspected");
+                                playerTimeout(gameID, player, true, false);
+                            } else {
+                                System.out.println("Failed to find game ID for failed timed-out player: " + player);
+                            }
+                        }
+                    }
+                }
+            
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+    }
+
+    private static <key, value> key getKeyByValue(Map<key, value> map, value value) {
+
+        for (Map.Entry<key, value> entry : map.entrySet()) {
+            if (Objects.equals(entry.getValue(), value)) {
+                return entry.getKey();
+            }
+        }
+
+        return null;
+    }
+
+    private void playerTimeout(Integer gameID, String username, Boolean suspected, Boolean failed){
+
+        System.out.println("Player " + username + " in game " + gameID + " has timed out. (suspected: " + suspected + ", failed: " + failed + ")");
+
+        PuzzleObject game = gamesMap.get(gameID);
+        Map<String, ClientCallbackInterface> allPlayers = game.getAllPlayers();
+
+        try{
+
+            if(suspected){
+                
+                System.out.println("Suspected player " + username + " in game " + gameID + " has timed out.");
+
+                for (String player : allPlayers.keySet()) {
+    
+                    if (!player.equals(username) && game.getPlayerStatus(username).equals("alive")){
+                        allPlayers.get(player).onPlayerTimeout(username, true, false);
+                    }
+                }
+    
+            } else if(failed){
+
+                System.out.println("Player " + username + " in game " + gameID + " has timed out.");
+
+                for (String player : allPlayers.keySet()) {
+    
+                    if (!player.equals(username) && game.getPlayerStatus(username).equals("alive")){
+                        allPlayers.get(player).onPlayerTimeout(username, false, true);
+                        playerQuit(gameID, username);
+                    }
+                }
+            }
+
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
+
+
+
+
+
+
 }
+
+
+
+
+

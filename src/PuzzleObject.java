@@ -1,5 +1,6 @@
 import java.rmi.Naming;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -12,6 +13,8 @@ public class PuzzleObject {
     private Integer difficultyFactor;
     private Integer guessCounter;
     private Map<String, ClientCallbackInterface> players = new LinkedHashMap<>();
+    private ConcurrentHashMap<String, Long> playerHeartbeats = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, String> playerStatus = new ConcurrentHashMap<>();
     private Map<String, Integer> scores = new LinkedHashMap<>(); // <username, words guessed>
     private String activePlayer;
     private String stem;
@@ -38,9 +41,10 @@ public class PuzzleObject {
      * @param username The username of the player to add.
      * @param client The ClientCallbackInterface the player will use to receive updates.
      */
-    public void addPlayer(String username, ClientCallbackInterface client) {
+    public void addPlayer(String username, ClientCallbackInterface client){
         this.players.put(username, client);
         this.scores.put(username, 0);
+        this.playerStatus.put(username, "active");
     }
 
     /**
@@ -363,6 +367,7 @@ public class PuzzleObject {
 
         this.players.remove(username);
         this.scores.remove(username);
+        this.playerStatus.remove(username);
 
         if(this.players.isEmpty()){
             return true;
@@ -411,4 +416,31 @@ public class PuzzleObject {
     public Map<String, Integer> getAllScores(){
         return new LinkedHashMap<>(scores);
     }
+
+
+    public Boolean updateHeartbeat(String username, Long heartbeat){
+
+        if(this.playerHeartbeats.containsKey(username)){
+            this.playerHeartbeats.put(username, heartbeat);
+            return true;
+        }
+
+        return false;
+    }
+
+    public Long getPlayerHeartbeat(String username){
+        return this.playerHeartbeats.get(username);
+    }
+
+    public String getPlayerStatus(String username){
+        return this.playerStatus.get(username);
+    }
+
+    public void updatePlayerStatus(String username, String status){
+        this.playerStatus.put(username, status);
+    }
+
+
+
+
 }

@@ -252,6 +252,26 @@ public class Client extends UnicastRemoteObject implements ClientCallbackInterfa
      * and manages game state flags to control the game flow.
      */
     private void playGame() {
+
+        Thread heartbeatThread = new Thread(() -> {
+
+            while (true) {
+
+                try {
+
+                    if (username != null) {
+                        server.playerHeartbeat(gameID, username);
+                    }
+
+                    Thread.sleep(1000);
+                    
+                } catch (Exception e) {
+                    System.out.println("Failed to send heartbeat.");
+                }
+            }
+        });
+
+        heartbeatThread.start();
         
         Thread quitThread = new Thread(() -> {
 
@@ -325,6 +345,7 @@ public class Client extends UnicastRemoteObject implements ClientCallbackInterfa
         } finally {
             try {
                 quitThread.join(100);
+                heartbeatThread.join(100);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -594,5 +615,17 @@ public class Client extends UnicastRemoteObject implements ClientCallbackInterfa
             e.printStackTrace();
         }
     }
+
+    public void onPlayerTimeout(String player, Boolean suspected, Boolean failed) throws RemoteException {
+
+        if(suspected){
+            System.out.println("Opponent " + player + " has timed out. (suspected: " + suspected + ", failed: " + failed + ")");
+        
+        } else if(failed){
+            System.out.println("Opponent " + player + " has timed out. (suspected: " + suspected + ", failed: " + failed + ")");
+        }
+
+    }
+
     
 }

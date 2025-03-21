@@ -12,5 +12,7 @@ public interface CrissCrossPuzzleInterface extends Remote {
     public Boolean addWord(String word) throws RemoteException;
     public Boolean removeWord(String word) throws RemoteException;
     public Boolean checkWord(String word) throws RemoteException;
+    public void playerHeartbeat(Integer gameID, String username) throws RemoteException;
+
 
 }
