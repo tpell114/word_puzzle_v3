@@ -435,14 +435,11 @@ public class Server extends UnicastRemoteObject implements CrissCrossPuzzleInter
     //@Override
     public void playerHeartbeat(Integer gameID, String username, Integer seqNum) throws RemoteException {
 
-        if(seqNum <= lastSequenceNumbers.getOrDefault(username, -1)){
-            System.out.println("Duplicate heartbeat from " + username + " ignored. Sequence number: " + seqNum);
+        if(isDupRequest(username, seqNum)){
             return;
         }
 
-        lastSequenceNumbers.put(username, seqNum);
-
-        System.out.println("Heartbeat from " + username + " in game " + gameID);
+             System.out.println("Heartbeat from " + username + " in game " + gameID);
 
         if (gamesMap.containsKey(gameID)) {
             gamesMap.get(gameID).updateHeartbeat(username);

@@ -136,17 +136,17 @@ public class Client extends UnicastRemoteObject implements ClientCallbackInterfa
         }
 
         try {
-            gameID = server.startGame(this.username, this, Integer.valueOf(numWords), Integer.valueOf(failedAttemptFactor));
+            gameID = server.startGame(this.username, this, Integer.valueOf(numWords), Integer.valueOf(failedAttemptFactor), seqNum);
             System.out.println("\nStarted game with ID: " + gameID + "\n" + Constants.GAME_START_MESSAGE);
 
             while (true) {
                 if (System.console().readLine().equals("~")) return; else break;
             }
 
-            server.issueStartSignal(gameID);
+            server.issueStartSignal(gameID, seqNum);
             System.out.println("It's your turn!\n");
-            printPuzzle(server.getInitialPuzzle(gameID));
-            System.out.println("Counter: " + server.getGuessCounter(gameID) + "\nWord guessed: 0");
+            printPuzzle(server.getInitialPuzzle(gameID,seqNum));
+            System.out.println("Counter: " + server.getGuessCounter(gameID, seqNum) + "\nWord guessed: 0");
             gameOverFlag = false;
             myTurn = true;
             playGame();
@@ -171,7 +171,7 @@ public class Client extends UnicastRemoteObject implements ClientCallbackInterfa
             System.out.println("\nEnter the ID of the game you would like to join. Or enter 0 to return to the main menu: ");
             this.gameID = Integer.valueOf(System.console().readLine());
 
-            while(!server.joinGame(gameID, this.username, this)){
+            while(!server.joinGame(gameID, this.username, this, seqNum)){
 
                 if(this.gameID == 0){
                     return;
@@ -187,8 +187,8 @@ public class Client extends UnicastRemoteObject implements ClientCallbackInterfa
 
             synchronized (this){wait();}
 
-            printPuzzle(server.getInitialPuzzle(gameID));
-            System.out.println("Counter: " + server.getGuessCounter(gameID) 
+            printPuzzle(server.getInitialPuzzle(gameID, seqNum));
+            System.out.println("Counter: " + server.getGuessCounter(gameID, seqNum) 
                             + "\nWord guessed: 0" 
                             + "\nPlease wait for your turn.");
             gameOverFlag = false;
@@ -291,7 +291,7 @@ public class Client extends UnicastRemoteObject implements ClientCallbackInterfa
                             System.out.println("Left game ID: " + gameID);
                             gameOverFlag = true;
                             myTurn = false;
-                            server.playerQuit(gameID, this.username);
+                            server.playerQuit(gameID, this.username, seqNum);
                             synchronized (this) {notifyAll();}
                             break;
                         }
@@ -317,7 +317,7 @@ public class Client extends UnicastRemoteObject implements ClientCallbackInterfa
 
                         if (guess.charAt(0) == '?'){
 
-                            if(server.checkWord(guess.substring(1))){
+                            if(server.checkWord(guess.substring(1),seqNum)){
                                 System.out.println("\nWord '" + guess.substring(1) + "' exists in the word repository.");
                             } else {
                                 System.out.println("\nWord '" + guess.substring(1) + "' does not exist in the word repository.");
@@ -336,7 +336,7 @@ public class Client extends UnicastRemoteObject implements ClientCallbackInterfa
                     if (guess.equals("~")){
 
                         myTurn = false;  //maybe?
-                        server.playerQuit(gameID, this.username);
+                        server.playerQuit(gameID, this.username, seqNum);
                         return;
                     }
                 }
