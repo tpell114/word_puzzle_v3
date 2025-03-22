@@ -48,7 +48,12 @@ public class Server extends UnicastRemoteObject implements CrissCrossPuzzleInter
      * @return the gameID of the newly started game
      * @throws RemoteException if the server is full
      */
-    public Integer startGame(String username, ClientCallbackInterface client, Integer numWords, Integer difficultyFactor) throws RemoteException {
+    public Integer startGame(String username, ClientCallbackInterface client, Integer numWords, Integer difficultyFactor, Integer sequenceNumber) throws RemoteException {
+
+        if (isDuplicateRequest(username, sequenceNumber)) 
+        {
+            return -1; 
+        }
 
         Random random = new Random();
         Integer gameID;
@@ -86,7 +91,12 @@ public class Server extends UnicastRemoteObject implements CrissCrossPuzzleInter
      * @throws RemoteException if an error occurs during communication with the
      *         server
      */
-    public Boolean joinGame(Integer gameID, String username, ClientCallbackInterface client) throws RemoteException {
+    public Boolean joinGame(Integer gameID, String username, ClientCallbackInterface client, Integer sequenceNumber) throws RemoteException {
+
+        if (isDuplicateRequest(username, sequenceNumber)) 
+        {
+            return false; 
+        }
 
         if(gamesMap.containsKey(gameID)){
 
@@ -121,6 +131,8 @@ public class Server extends UnicastRemoteObject implements CrissCrossPuzzleInter
      * @throws RemoteException if an error occurs during remote communication
      */
     public void issueStartSignal(Integer gameID) throws RemoteException {
+
+       //need to add at omst once
 
         try {
             Map<String, ClientCallbackInterface> allPlayers = gamesMap.get(gameID).getAllPlayers();
@@ -178,13 +190,10 @@ public class Server extends UnicastRemoteObject implements CrissCrossPuzzleInter
      */
     public void playerGuess(String username, Integer gameID, String guess, Integer seqNum) throws RemoteException {
 
-        if(seqNum <= lastSequenceNumbers.getOrDefault(username, -1))
+        if(isDupRequest(username, seqNum))
         {
-            System.out.println("Duplicate request from " + username + "ignored. Sequence number: " + seqNum);
             return;
         }
-
-        lastSequenceNumbers.put(username, seqNum);
 
         System.out.println("Received guess: " + guess + " for game ID: " + gameID);
         PuzzleObject game = gamesMap.get(gameID);
@@ -347,7 +356,12 @@ public class Server extends UnicastRemoteObject implements CrissCrossPuzzleInter
      * @throws RemoteException if an error occurs during communication with the
      *         client
      */
-    public void playerQuit(Integer gameID, String username) throws RemoteException {
+    public void playerQuit(Integer gameID, String username, Integer sequenceNumber) throws RemoteException {
+
+        if (isDuplicateRequest(username, sequenceNumber)) 
+        {
+            return; 
+        }
 
         PuzzleObject game = gamesMap.get(gameID);
 
@@ -547,12 +561,15 @@ public class Server extends UnicastRemoteObject implements CrissCrossPuzzleInter
         }
     }
 
-
-
-
-
-
-
+    private boolean isDupRequest(String username, Integer sequenceNumber) {
+        if (sequenceNumber <= lastSequenceNumbers.getOrDefault(username, -1)) 
+        {
+            System.out.println("Duplicate request from " + username + " ignored. Sequence number: " + sequenceNumber);
+            return true; 
+        }
+        lastSequenceNumbers.put(username, sequenceNumber);
+        return false; 
+    }
 
 
 }
