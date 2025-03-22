@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Server extends UnicastRemoteObject implements CrissCrossPuzzleInterface{
 
     ConcurrentHashMap<Integer, PuzzleObject> gamesMap = new ConcurrentHashMap<>();
+    ConcurrentHashMap<String, Integer> lastSequenceNumbers = new ConcurrentHashMap<>();
     WordRepositoryInterface wordRepo;
     AccountServiceInterface accountService;
 
@@ -175,7 +176,15 @@ public class Server extends UnicastRemoteObject implements CrissCrossPuzzleInter
      * @param guess the guess made by the player
      * @throws RemoteException if an error occurs during remote communication
      */
-    public void playerGuess(String username, Integer gameID, String guess) throws RemoteException {
+    public void playerGuess(String username, Integer gameID, String guess, Integer seqNum) throws RemoteException {
+
+        if(seqNum <= lastSequenceNumbers.getOrDefault(username, -1))
+        {
+            System.out.println("Duplicate request from " + username + "ignored. Sequence number: " + seqNum);
+            return;
+        }
+
+        lastSequenceNumbers.put(username, seqNum);
 
         System.out.println("Received guess: " + guess + " for game ID: " + gameID);
         PuzzleObject game = gamesMap.get(gameID);
@@ -409,8 +418,15 @@ public class Server extends UnicastRemoteObject implements CrissCrossPuzzleInter
         return wordRepo.checkWord(word);
     }
 
-    @Override
-    public void playerHeartbeat(Integer gameID, String username) throws RemoteException {
+    //@Override
+    public void playerHeartbeat(Integer gameID, String username, Integer seqNum) throws RemoteException {
+
+        if(seqNum <= lastSequenceNumbers.getOrDefault(username, -1)){
+            System.out.println("Duplicate heartbeat from " + username + " ignored. Sequence number: " + seqNum);
+            return;
+        }
+
+        lastSequenceNumbers.put(username, seqNum);
 
         System.out.println("Heartbeat from " + username + " in game " + gameID);
 

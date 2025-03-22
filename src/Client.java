@@ -7,6 +7,7 @@ import java.util.Map;
 
 public class Client extends UnicastRemoteObject implements ClientCallbackInterface {
 
+    private Integer seqNum = 0;
     private CrissCrossPuzzleInterface server;
     private AccountServiceInterface accountService;
     private ScoreboardInterface scoreboard;
@@ -260,7 +261,8 @@ public class Client extends UnicastRemoteObject implements ClientCallbackInterfa
                 try {
 
                     if (username != null) {
-                        server.playerHeartbeat(gameID, username);
+                        server.playerHeartbeat(gameID, username, seqNum);
+                        seqNum++;
                     }
 
                     Thread.sleep(1000);
@@ -325,7 +327,8 @@ public class Client extends UnicastRemoteObject implements ClientCallbackInterfa
 
                         } else {
                             myTurn = false;
-                            server.playerGuess(this.username, gameID, guess);
+                            server.playerGuess(this.username, gameID, guess, seqNum);
+                            seqNum++;
                             break;
                         }
                     }
