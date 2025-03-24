@@ -15,6 +15,7 @@ public class PuzzleObject {
     private Map<String, ClientCallbackInterface> players = new LinkedHashMap<>();
     private ConcurrentHashMap<String, Long> playerHeartbeats = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, String> playerStatus = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, Integer> playerSequences = new ConcurrentHashMap<>();
     private Map<String, Integer> scores = new LinkedHashMap<>(); // <username, words guessed>
     private String activePlayer;
     private String stem;
@@ -31,6 +32,7 @@ public class PuzzleObject {
         this.numWords = numWords;
         this.difficultyFactor = difficultyFactor;
         this.playerStatus.put(username, "active");
+        this.playerSequences.put(username, -1);
         
         initPuzzle();
     }
@@ -46,6 +48,7 @@ public class PuzzleObject {
         this.players.put(username, client);
         this.scores.put(username, 0);
         this.playerStatus.put(username, "active");
+        this.playerSequences.put(username, -1);
     }
 
     /**
@@ -434,7 +437,13 @@ public class PuzzleObject {
         this.playerStatus.put(username, status);
     }
 
+    public Integer getPlayerSequence(String username){
+        return this.playerSequences.get(username);
+    }
 
+    public void updatePlayerSequence(String username, Integer sequence){
+        this.playerSequences.put(username, sequence);
+    }
 
 
 }

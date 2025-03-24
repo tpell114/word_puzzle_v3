@@ -335,7 +335,23 @@ public class Client extends UnicastRemoteObject implements ClientCallbackInterfa
                         } else {
                             
                             myTurn = false;
-                            server.playerGuess(this.username, gameID, guess);
+
+                            Integer currentSequence = server.getSequence(username, gameID);
+
+                            // 50% chance of repeating the same sequence number
+                            if (Math.random() < 0.5 && currentSequence > 0) {
+                                System.out.println("[Test] Simulating duplicate request with sequence: " + currentSequence);
+                            } else {
+                                currentSequence++;
+                            }
+
+                            Boolean accepted = server.playerGuess(this.username, gameID, guess, currentSequence);
+
+                            if (!accepted) {
+                                System.out.println("[Test] Server ignored duplicate guess. Try again.");
+                                myTurn = true;
+                                continue;
+                            }
                             
                             break;
                         }

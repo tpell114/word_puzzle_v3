@@ -175,13 +175,22 @@ public class Server extends UnicastRemoteObject implements CrissCrossPuzzleInter
      * @param guess the guess made by the player
      * @throws RemoteException if an error occurs during remote communication
      */
-    public void playerGuess(String username, Integer gameID, String guess) throws RemoteException {
+    public Boolean playerGuess(String username, Integer gameID, String guess, Integer sequence) throws RemoteException {
 
-        System.out.println("Received guess: " + guess + " for game ID: " + gameID);
         PuzzleObject game = gamesMap.get(gameID);
+        Integer lastSequence = game.getPlayerSequence(username);
         String trimmedGuess = guess.trim();
         Boolean solvedFlag;
+        
+        if (sequence <= lastSequence) {
+            System.out.println("Duplicate or out-of-order request from " + username + " (seq: " + sequence + ", last: " + lastSequence + ")");
+            return false;
+        }
 
+        game.updatePlayerSequence(username, sequence);
+
+        System.out.println("Received guess: " + guess + " for game ID: " + gameID);
+        
         try {
             if (trimmedGuess.length() == 1){    //player guessed a character
 
@@ -217,6 +226,8 @@ public class Server extends UnicastRemoteObject implements CrissCrossPuzzleInter
             System.out.println("Error issuing callback: " + e.getMessage());
             e.printStackTrace();
         }
+
+        return true;
     }
 
     /**
@@ -413,7 +424,7 @@ public class Server extends UnicastRemoteObject implements CrissCrossPuzzleInter
     @Override
     public void playerHeartbeat(Integer gameID, String username) throws RemoteException {
 
-        System.out.println("Heartbeat from " + username + " in game " + gameID);
+        //System.out.println("Heartbeat from " + username + " in game " + gameID);
 
         if (gamesMap.containsKey(gameID)) {
             gamesMap.get(gameID).updateHeartbeat(username);
@@ -540,7 +551,9 @@ public class Server extends UnicastRemoteObject implements CrissCrossPuzzleInter
         }
     }
 
-
+    public Integer getSequence(String username, Integer gameID) throws RemoteException {
+        return gamesMap.get(gameID).getPlayerSequence(username);
+    }
 
 
 
