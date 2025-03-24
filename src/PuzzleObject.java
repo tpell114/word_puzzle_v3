@@ -30,6 +30,7 @@ public class PuzzleObject {
         this.gameID = gameID;
         this.numWords = numWords;
         this.difficultyFactor = difficultyFactor;
+        this.playerStatus.put(username, "active");
         
         initPuzzle();
     }
@@ -45,7 +46,6 @@ public class PuzzleObject {
         this.players.put(username, client);
         this.scores.put(username, 0);
         this.playerStatus.put(username, "active");
-        this.playerHeartbeats.put(username, System.nanoTime());
     }
 
     /**
@@ -358,11 +358,10 @@ public class PuzzleObject {
     /**
      * Removes a player from the game.
      * 
-     * Player is removed from the players list and scores map.
+     * Player is removed from the players list, scores list, and playerStatus list.
      * 
      * @param username the username of the player to be removed
-     * @return true if the player was successfully removed, false if the player
-     *         was not in the game
+     * @return true if the game is now empty, false otherwise
      */
     public Boolean removePlayer(String username){
 

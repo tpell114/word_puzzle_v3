@@ -360,6 +360,7 @@ public class Server extends UnicastRemoteObject implements CrissCrossPuzzleInter
             }
 
         } else {
+            System.out.println("Removed player: " + username + " from game ID: " + gameID);
             System.out.println("No more players in game ID: " + gameID + ", removing game...");
             gamesMap.remove(gameID);
         }
@@ -422,14 +423,14 @@ public class Server extends UnicastRemoteObject implements CrissCrossPuzzleInter
 
     private void heartbeatListener() {
 
-        long TOLERANCE = 1000; // in nanoseconds
+        long TOLERANCE_MS = 1000; // in milliseconds
+        long TOLERANCE_NS = TOLERANCE_MS * 1000000; // in nanoseconds
         int FAILURE_THRESHOLD = 3;
 
-        System.out.println("Starting heartbeat listener...");
-
         while (true) {
+
             try {
-                Thread.sleep(TOLERANCE);
+                Thread.sleep(TOLERANCE_MS);
     
                 long now = System.nanoTime();
     
@@ -437,37 +438,48 @@ public class Server extends UnicastRemoteObject implements CrissCrossPuzzleInter
     
                     for (String player : game.getAllPlayers().keySet()) {
 
-                        long elapsed = now - game.getPlayerHeartbeat(player);
+                        Long lastHeartbeat = game.getPlayerHeartbeat(player);
 
-                        if (elapsed < TOLERANCE) {
-                            break;
-                        } else if (elapsed > TOLERANCE * FAILURE_THRESHOLD) {
+                        if (lastHeartbeat == null) continue;
+
+                        Long elapsed = now - lastHeartbeat;
+                        Integer gameID = getKeyByValue(gamesMap, game);
+                        String status = game.getPlayerStatus(player);
+
+                        if (elapsed < TOLERANCE_NS) {
+                            //active
+                            if(gameID != null){
+
+                                if(!status.equals("active")){
+                                    gamesMap.get(gameID).updatePlayerStatus(player, "active");
+                                }
+                
+                            } else {
+                                System.out.println("Failed to find game ID for active player: " + player);
+                            }
+
+                        } else if (elapsed > TOLERANCE_NS * FAILURE_THRESHOLD) {
                             //failed
-                            Integer gameID = getKeyByValue(gamesMap, game);
-
                             if(gameID != null){
                                 
-                                if(game.getPlayerStatus(player).equals("failed")){
+                                if(!status.equals("failed")){
                                     gamesMap.get(gameID).updatePlayerStatus(player, "failed");
+                                    playerTimeout(gameID, player, false, true);
                                 }
                                 
-                                playerTimeout(gameID, player, false, true);
                             } else {
                                 System.out.println("Failed to find game ID for suspected timed-out player: " + player);
                             }
 
-                            break;
                         } else {
                             //suspected
-                            Integer gameID = getKeyByValue(gamesMap, game);
-
                             if(gameID != null){
 
-                                if(!game.getPlayerStatus(player).equals("suspected")){
+                                if(!status.equals("suspected")){
                                     gamesMap.get(gameID).updatePlayerStatus(player, "suspected");
+                                    playerTimeout(gameID, player, true, false);
                                 }
                                 
-                                playerTimeout(gameID, player, true, false);
                             } else {
                                 System.out.println("Failed to find game ID for failed timed-out player: " + player);
                             }
@@ -503,25 +515,22 @@ public class Server extends UnicastRemoteObject implements CrissCrossPuzzleInter
         try{
 
             if(suspected){
-                
-                System.out.println("Suspected player " + username + " in game " + gameID + " has timed out.");
 
                 for (String player : allPlayers.keySet()) {
     
-                    if (!player.equals(username) && game.getPlayerStatus(username).equals("alive")){
+                    if (!player.equals(username) && game.getPlayerStatus(player).equals("active")){
                         allPlayers.get(player).onPlayerTimeout(username, true, false);
                     }
                 }
     
             } else if(failed){
 
-                System.out.println("Player " + username + " in game " + gameID + " has timed out.");
+                playerQuit(gameID, username);
 
                 for (String player : allPlayers.keySet()) {
     
-                    if (!player.equals(username) && game.getPlayerStatus(username).equals("alive")){
+                    if (!player.equals(username) && game.getPlayerStatus(player).equals("active")){
                         allPlayers.get(player).onPlayerTimeout(username, false, true);
-                        playerQuit(gameID, username);
                     }
                 }
             }

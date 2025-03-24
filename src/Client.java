@@ -14,12 +14,14 @@ public class Client extends UnicastRemoteObject implements ClientCallbackInterfa
     private Integer gameID;
     Boolean myTurn;
     Boolean gameStartFlag;
-    Boolean gameOverFlag;
+    private volatile Boolean gameOverFlag;
+    private Boolean supressHeartbeat;
 
 
     public Client() throws RemoteException {
         super();
         gameID = -1;
+        supressHeartbeat = false;
     }
 
     public static void main(String[] args) throws RemoteException {
@@ -146,7 +148,6 @@ public class Client extends UnicastRemoteObject implements ClientCallbackInterfa
             System.out.println("It's your turn!\n");
             printPuzzle(server.getInitialPuzzle(gameID));
             System.out.println("Counter: " + server.getGuessCounter(gameID) + "\nWord guessed: 0");
-            gameOverFlag = false;
             myTurn = true;
             playGame();
 
@@ -190,7 +191,6 @@ public class Client extends UnicastRemoteObject implements ClientCallbackInterfa
             System.out.println("Counter: " + server.getGuessCounter(gameID) 
                             + "\nWord guessed: 0" 
                             + "\nPlease wait for your turn.");
-            gameOverFlag = false;
             myTurn = false;
             playGame();
 
@@ -218,7 +218,7 @@ public class Client extends UnicastRemoteObject implements ClientCallbackInterfa
      *
      * @param player the name of the player who joined
      * @param numPlayers the updated number of players in the game
-     * @throws RemoteException if an error occurs during communication with the
+     * @throws RemoteException if an error occurs during communication with the 
      *         server
      */
     @Override
@@ -253,13 +253,16 @@ public class Client extends UnicastRemoteObject implements ClientCallbackInterfa
      */
     private void playGame() {
 
+        gameOverFlag = false;
+        supressHeartbeat = false;
+
         Thread heartbeatThread = new Thread(() -> {
 
-            while (true) {
+            while (!gameOverFlag) {
 
                 try {
 
-                    if (username != null) {
+                    if (username != null && !supressHeartbeat) {
                         server.playerHeartbeat(gameID, username);
                     }
 
@@ -273,7 +276,7 @@ public class Client extends UnicastRemoteObject implements ClientCallbackInterfa
 
         heartbeatThread.start();
         
-        Thread quitThread = new Thread(() -> {
+        Thread monitorThread = new Thread(() -> {
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 
@@ -290,8 +293,14 @@ public class Client extends UnicastRemoteObject implements ClientCallbackInterfa
                             gameOverFlag = true;
                             myTurn = false;
                             server.playerQuit(gameID, this.username);
+                            gameID = -1;
                             synchronized (this) {notifyAll();}
                             break;
+
+                        } else if (input.equals("\\")) {
+
+                            supressHeartbeat = !supressHeartbeat;
+                            System.out.println("[Test] Heartbeat " + (supressHeartbeat ? "suppressed" : "resumed"));
                         }
                     } else {
                         Thread.sleep(100);
@@ -302,7 +311,7 @@ public class Client extends UnicastRemoteObject implements ClientCallbackInterfa
             }
         });
 
-        quitThread.start();
+        monitorThread.start();
         
         try {
             while(!gameOverFlag){
@@ -311,7 +320,7 @@ public class Client extends UnicastRemoteObject implements ClientCallbackInterfa
 
                     String guess = getValidGuess();
 
-                    while (!guess.equals("~")){
+                    while (!guess.equals("~") && !guess.equals("\\")){
 
                         if (guess.charAt(0) == '?'){
 
@@ -324,17 +333,23 @@ public class Client extends UnicastRemoteObject implements ClientCallbackInterfa
                             guess = getValidGuess();
 
                         } else {
+                            
                             myTurn = false;
                             server.playerGuess(this.username, gameID, guess);
+                            
                             break;
                         }
                     }
                     
                     if (guess.equals("~")){
-
+                        gameOverFlag = true;
                         myTurn = false;  //maybe?
                         server.playerQuit(gameID, this.username);
+                        gameID = -1;
                         return;
+                    } else if (guess.equals("\\")){
+                        supressHeartbeat = !supressHeartbeat;
+                        System.out.println("[Test] Heartbeat " + (supressHeartbeat ? "suppressed" : "resumed"));
                     }
                 }
 
@@ -344,8 +359,8 @@ public class Client extends UnicastRemoteObject implements ClientCallbackInterfa
             e.printStackTrace();
         } finally {
             try {
-                quitThread.join(100);
-                heartbeatThread.join(100);
+                monitorThread.join(2000);
+                heartbeatThread.join(2000);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -482,7 +497,7 @@ public class Client extends UnicastRemoteObject implements ClientCallbackInterfa
         System.out.println(Constants.GUESS_MESSAGE);
         String guess = System.console().readLine().toLowerCase().trim();
 
-        while ((!guess.matches("^[a-zA-Z?]*$") && !guess.equals("~")) || guess.equals("")) {
+        while ((!guess.matches("^[a-zA-Z?~\\\\]*$") || guess.equals(""))){
             System.out.println("Invalid input."
                             + "\n" + Constants.GUESS_MESSAGE);
             guess = System.console().readLine().toLowerCase().trim();
