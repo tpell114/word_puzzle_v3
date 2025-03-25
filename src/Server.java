@@ -463,6 +463,7 @@ public class Server extends UnicastRemoteObject implements CrissCrossPuzzleInter
 
                                 if(!status.equals("active")){
                                     gamesMap.get(gameID).updatePlayerStatus(player, "active");
+                                    System.out.println("Player " + player + " is now active again in game " + gameID);
                                 }
                 
                             } else {

@@ -16,6 +16,7 @@ public class Client extends UnicastRemoteObject implements ClientCallbackInterfa
     Boolean gameStartFlag;
     private volatile Boolean gameOverFlag;
     private Boolean supressHeartbeat;
+    private Integer currentSequence;
 
 
     public Client() throws RemoteException {
@@ -148,6 +149,8 @@ public class Client extends UnicastRemoteObject implements ClientCallbackInterfa
             System.out.println("It's your turn!\n");
             printPuzzle(server.getInitialPuzzle(gameID));
             System.out.println("Counter: " + server.getGuessCounter(gameID) + "\nWord guessed: 0");
+            this.currentSequence = server.getSequence(username, gameID);
+            System.out.println("[Test] Current sequence: " + this.currentSequence);
             myTurn = true;
             playGame();
 
@@ -336,10 +339,12 @@ public class Client extends UnicastRemoteObject implements ClientCallbackInterfa
                             
                             myTurn = false;
 
-                            Integer currentSequence = server.getSequence(username, gameID);
+                            currentSequence = server.getSequence(username, gameID);
+                            
+                            //System.out.println("[Test] Current sequence: " + currentSequence);
 
                             // 50% chance of repeating the same sequence number
-                            if (Math.random() < 0.5 && currentSequence > 0) {
+                            if (Math.random() < 0.5) {
                                 System.out.println("[Test] Simulating duplicate request with sequence: " + currentSequence);
                             } else {
                                 currentSequence++;
@@ -348,7 +353,7 @@ public class Client extends UnicastRemoteObject implements ClientCallbackInterfa
                             Boolean accepted = server.playerGuess(this.username, gameID, guess, currentSequence);
 
                             if (!accepted) {
-                                System.out.println("[Test] Server ignored duplicate guess. Try again.");
+                                System.out.println("[Test] Server ignored duplicate guess. Trying again...");
                                 myTurn = true;
                                 continue;
                             }
@@ -401,6 +406,7 @@ public class Client extends UnicastRemoteObject implements ClientCallbackInterfa
         printPuzzle(puzzle);
         System.out.println("Counter: " + guessCounter
                         + "\nWord guessed: " + wordCounter);
+        System.out.println("[Test] Current sequence: " + this.currentSequence);
         myTurn = true;
         notifyAll();
     }
