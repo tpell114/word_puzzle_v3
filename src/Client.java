@@ -22,6 +22,7 @@ public class Client extends UnicastRemoteObject implements ClientCallbackInterfa
     public Client() throws RemoteException {
         super();
         gameID = -1;
+        currentSequence = 0;
         supressHeartbeat = false;
     }
 
