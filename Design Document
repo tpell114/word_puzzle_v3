@@ -149,7 +149,7 @@
 
 
 ## Statement of Contribution
-| Name| Server|Client| Word Repo| Word repo interface| Account Service|AccountInterface|ClientcallbackInterface|Constants|CrisscrossPuzzleInterface|PuzzleObject|RMIRegistry|Scorebooard|Scoreboard Interface|
------|-------|------|-----------|--------------------|----------------|----------------|-----------------------|---------|-------------------------|------------|-----------|-----------|--------------------|
-|Tyler|Tyler |Tyler | Tyler     |Tyler               |                |                |Tyler                  |Tyler    |Tyler                    |Tyler       |Tyler      |           |                    |
-|Juan |      |      | Juan      |                    |Juan            |Juan            |                       |         |                         |            |           |Juan       |Juan                |  
+| Name| Server|Client| Word Repo| Word repo interface| Account Service|AccountInterface|ClientcallbackInterface|Constants|CrisscrossPuzzleInterface|PuzzleObject|RMIRegistry|Scorebooard|Scoreboard Interface|Heartbeat|Sequence|Spaghetti|
+-----|-------|------|-----------|--------------------|----------------|----------------|-----------------------|---------|-------------------------|------------|-----------|-----------|--------------------|---------|--------|---------|
+|Tyler|Tyler |Tyler | Tyler     |Tyler               |                |                |Tyler                  |Tyler    |Tyler                    |Tyler       |Tyler      |           |                    |Tyler    |Tyler   |         |
+|Juan |      |      | Juan      |                    |Juan            |Juan            |                       |         |                         |            |           |Juan       |Juan                |         |        |Juan     | 
