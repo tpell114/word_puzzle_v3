@@ -32,7 +32,7 @@ public class PuzzleObject {
         this.numWords = numWords;
         this.difficultyFactor = difficultyFactor;
         this.playerStatus.put(username, "active");
-        this.playerSequences.put(username, -1);
+        this.playerSequences.put(username, 0);
         
         initPuzzle();
     }
@@ -48,7 +48,7 @@ public class PuzzleObject {
         this.players.put(username, client);
         this.scores.put(username, 0);
         this.playerStatus.put(username, "active");
-        this.playerSequences.put(username, -1);
+        this.playerSequences.put(username, 0);
     }
 
     /**

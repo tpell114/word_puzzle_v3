@@ -554,20 +554,39 @@ public class Client extends UnicastRemoteObject implements ClientCallbackInterfa
 
             while (!input.equals("~")) {
 
+                currentSequence = server.getSequence(this.username, this.gameID);
+
+                // 50% chance of repeating the same sequence number
+                if (Math.random() < 0.5) {
+                    System.out.println("[Test] Simulating duplicate request with sequence: " + currentSequence);
+                } else {
+                    currentSequence++;
+                }
+
                 if (input.charAt(0) == '+') {
 
-                    if (server.addWord(input.substring(1))){
+                    Integer result = server.addWord(input.substring(1), username, currentSequence);
+
+                    if (result == 1) {
                         System.out.println("\nSuccessfully added word '" + input.substring(1) + "' to the word repository.");
-                    } else {
+                    } else if (result == 0) {
                         System.out.println("\nFailed to add word '" + input.substring(1) + "' to the word repository, it may already exist.");
+                    } else if (result == -1) {
+                        System.out.println("[Test] Server ignored duplicate guess. Trying again...");
+                        continue;
                     }
 
                 } else if (input.charAt(0) == '-') {
+
+                    Integer result = server.removeWord(input.substring(1), username, currentSequence);
                     
-                    if (server.removeWord(input.substring(1))){
+                    if (result == 1) {
                         System.out.println("\nSuccessfully removed word '" + input.substring(1) + "' from the word repository.");
-                    } else {
+                    } else if (result == 0) {
                         System.out.println("\nFailed to remove word '" + input.substring(1) + "' from the word repository, it may not exist.");
+                    } else if (result == -1) {
+                        System.out.println("[Test] Server ignored duplicate guess. Trying again...");
+                        continue;
                     }
                     
                 } else if (input.charAt(0) == '?') {

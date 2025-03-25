@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Server extends UnicastRemoteObject implements CrissCrossPuzzleInterface{
 
     ConcurrentHashMap<Integer, PuzzleObject> gamesMap = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, Integer> noGamePlayerSequences = new ConcurrentHashMap<>();
     WordRepositoryInterface wordRepo;
     AccountServiceInterface accountService;
 
@@ -385,11 +386,26 @@ public class Server extends UnicastRemoteObject implements CrissCrossPuzzleInter
      * exist in the repository. The repository is then sorted.
      *
      * @param word the word to be added to the repository
-     * @return true if the word was successfully added, false if it already exists
+     * @return -1 if the word is duplicate or out-of-order, 1 if the word was successfully added,
+     * and 0 if it already exists
      * @throws RemoteException if a remote communication error occurs
      */
-    public Boolean addWord(String word) throws RemoteException {
-        return wordRepo.addWord(word);
+    public Integer addWord(String word, String username, Integer sequence) throws RemoteException {
+
+        Integer lastSequence = noGamePlayerSequences.get(username);
+
+        if (sequence <= lastSequence) {
+            System.out.println("Duplicate or out-of-order request from " + username + " (seq: " + sequence + ", last: " + lastSequence + ")");
+            return -1;
+        }
+
+        updateNoGameSequence(username, sequence);
+
+        if (wordRepo.addWord(word)) {
+            return 1;
+        } else {
+            return 0;
+        }
     }
 
     /**
@@ -402,8 +418,22 @@ public class Server extends UnicastRemoteObject implements CrissCrossPuzzleInter
      * @return true if the word was successfully removed, false if it did not exist
      * @throws RemoteException if a remote communication error occurs
      */
-    public Boolean removeWord(String word) throws RemoteException {
-        return wordRepo.removeWord(word);
+    public Integer removeWord(String word, String username, Integer sequence) throws RemoteException {
+
+        Integer lastSequence = noGamePlayerSequences.get(username);
+
+        if (sequence <= lastSequence) {
+            System.out.println("Duplicate or out-of-order request from " + username + " (seq: " + sequence + ", last: " + lastSequence + ")");
+            return -1;
+        }
+
+        updateNoGameSequence(username, sequence);
+
+        if (wordRepo.removeWord(word)) {
+            return 1;
+        } else {
+            return 0;
+        }
     }
 
     /**
@@ -553,10 +583,28 @@ public class Server extends UnicastRemoteObject implements CrissCrossPuzzleInter
     }
 
     public Integer getSequence(String username, Integer gameID) throws RemoteException {
+
+        if (gameID == -1) {
+
+            Integer sequence = noGamePlayerSequences.get(username);
+
+            if (sequence == null) {
+                noGamePlayerSequences.put(username, 0);
+                System.out.println("Created no game sequence for " + username);
+                return 0;
+            } 
+
+            System.out.println("Returning no game sequence for " + username);
+            return sequence;
+        }
+
+        System.out.println("Returning sequence for " + username + " in game " + gameID);
         return gamesMap.get(gameID).getPlayerSequence(username);
     }
 
-
+    public void updateNoGameSequence(String username, Integer sequence) throws RemoteException {
+        noGamePlayerSequences.put(username, sequence);
+    }
 
 
 

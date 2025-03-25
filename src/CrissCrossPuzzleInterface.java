@@ -9,11 +9,12 @@ public interface CrissCrossPuzzleInterface extends Remote {
     public Integer getGuessCounter(Integer gameID) throws RemoteException;
     public Boolean playerGuess(String username, Integer gameID, String guess, Integer sequence) throws RemoteException;
     public void playerQuit(Integer gameID, String username) throws RemoteException;
-    public Boolean addWord(String word) throws RemoteException;
-    public Boolean removeWord(String word) throws RemoteException;
+    public Integer addWord(String word, String username, Integer sequence) throws RemoteException;
+    public Integer removeWord(String word, String username, Integer sequence) throws RemoteException;
     public Boolean checkWord(String word) throws RemoteException;
     public void playerHeartbeat(Integer gameID, String username) throws RemoteException;
     public Integer getSequence(String username, Integer gameID) throws RemoteException;
+    public void updateNoGameSequence(String username, Integer sequence) throws RemoteException;
 
 
 }
